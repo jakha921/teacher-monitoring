@@ -1,24 +1,18 @@
-
-import React, { useState } from 'react';
-import Header from './Header';
+import React from 'react';
 import Sidebar from './Sidebar';
-import { Page } from '../types';
+import Header from './Header';
 
 interface AppLayoutProps {
   children: React.ReactNode;
-  activePage: Page;
-  setActivePage: React.Dispatch<React.SetStateAction<Page>>;
 }
 
-const AppLayout: React.FC<AppLayoutProps> = ({ children, activePage, setActivePage }) => {
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
-
+const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   return (
-    <div className="flex h-screen w-full bg-gray-100">
-      <Sidebar isOpen={isSidebarOpen} activePage={activePage} setActivePage={setActivePage} />
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header onMenuClick={() => setSidebarOpen(!isSidebarOpen)} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
+        <Header />
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
           {children}
         </main>
       </div>

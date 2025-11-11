@@ -1,47 +1,30 @@
-
 import React from 'react';
-import { Page } from '../types';
-import { HomeIcon, ScienceIcon, BookIcon, CommunityIcon, OrgIcon } from '../constants';
+import { NavLink } from 'react-router-dom';
+import { NAV_LINKS } from '../constants';
 
-interface SidebarProps {
-  isOpen: boolean;
-  activePage: Page;
-  setActivePage: React.Dispatch<React.SetStateAction<Page>>;
-}
-
-const navItems = [
-  { name: 'Boshlangich' as Page, label: 'Бошланғич', icon: HomeIcon },
-  { name: 'Ilmiy faoliyat' as Page, label: 'Илмий фаолият', icon: ScienceIcon },
-  { name: 'Uquv-uslubiy faoliyat' as Page, label: 'Ўқув-услубий фаолият', icon: BookIcon },
-  { name: 'Manaviy-marifiy faoliyat' as Page, label: 'Маънавий-маърифий', icon: CommunityIcon },
-  { name: 'Tashkiliy va boshqaruv faoliyati' as Page, label: 'Ташкилий фаолият', icon: OrgIcon },
-];
-
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, activePage, setActivePage }) => {
+const Sidebar: React.FC = () => {
   return (
-    <aside className={`flex-shrink-0 bg-blue-900 text-white transition-all duration-300 ${isOpen ? 'w-64' : 'w-0'} lg:w-64 overflow-hidden`}>
-      <div className="flex items-center justify-center h-20 border-b border-blue-800">
-        <h2 className="text-xl font-bold">NIU Portal</h2>
+    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
+      <div className="h-16 flex items-center justify-center border-b border-gray-200">
+        <h1 className="text-xl font-bold text-blue-900">University AI</h1>
       </div>
-      <nav className="mt-4">
+      <nav className="flex-1 px-4 py-6">
         <ul>
-          {navItems.map((item) => (
-            <li key={item.name} className="px-4 py-1">
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setActivePage(item.name);
-                }}
-                className={`flex items-center p-3 rounded-lg transition-colors ${
-                  activePage === item.name
-                    ? 'bg-blue-700 text-white'
-                    : 'text-blue-200 hover:bg-blue-800 hover:text-white'
-                }`}
+          {NAV_LINKS.map((link) => (
+            <li key={link.href}>
+              <NavLink
+                to={link.href}
+                className={({ isActive }) =>
+                  `flex items-center px-4 py-2.5 my-1 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-blue-100 text-blue-900'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`
+                }
               >
-                <item.icon className="w-5 h-5" />
-                <span className="ml-4 font-medium">{item.label}</span>
-              </a>
+                <span className="mr-3">{link.icon}</span>
+                {link.label}
+              </NavLink>
             </li>
           ))}
         </ul>

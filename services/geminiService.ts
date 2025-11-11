@@ -1,4 +1,5 @@
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
+// FIX: Corrected import path for types
 import { GroundingSource } from '../types';
 
 const API_KEY = process.env.API_KEY;

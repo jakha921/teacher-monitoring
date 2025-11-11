@@ -1,41 +1,32 @@
-
-import React, { useState } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from './components/AppLayout';
 import BoshlangichPage from './pages/BoshlangichPage';
 import IlmiyFaoliyatPage from './pages/IlmiyFaoliyatPage';
+import UquvUslubiyFaoliyatPage from './pages/UquvUslubiyFaoliyatPage';
+import ManaviyMarifiyFaoliyatPage from './pages/ManaviyMarifiyFaoliyatPage';
+import TashkiliyFaoliyatPage from './pages/TashkiliyFaoliyatPage';
+import VerificationPage from './pages/VerificationPage';
 import PlaceholderPage from './pages/PlaceholderPage';
-import { Page } from './types';
 import Chatbot from './components/Chatbot';
 
 const App: React.FC = () => {
-  const [activePage, setActivePage] = useState<Page>('Boshlangich');
-
-  const renderPage = () => {
-    switch (activePage) {
-      case 'Boshlangich':
-        return <BoshlangichPage />;
-      case 'Ilmiy faoliyat':
-        return <IlmiyFaoliyatPage />;
-      case 'Uquv-uslubiy faoliyat':
-        return <PlaceholderPage title="Ўқув-услубий фаолият" />;
-      case 'Manaviy-marifiy faoliyat':
-        return <PlaceholderPage title="Маънавий-маърифий фаолият" />;
-      case 'Tashkiliy va boshqaruv faoliyati':
-        return <PlaceholderPage title="Ташкилий ва бошқарув фаолияти" />;
-      default:
-        return <BoshlangichPage />;
-    }
-  };
-
   return (
-    <div className="flex h-screen bg-gray-100 font-sans">
-      <AppLayout activePage={activePage} setActivePage={setActivePage}>
-        <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
-          {renderPage()}
-        </div>
+    <Router>
+      <AppLayout>
+        <Routes>
+          <Route path="/" element={<Navigate to="/boshlangich" />} />
+          <Route path="/boshlangich" element={<BoshlangichPage />} />
+          <Route path="/ilmiy-faoliyat" element={<IlmiyFaoliyatPage />} />
+          <Route path="/uquv-uslubiy-faoliyat" element={<UquvUslubiyFaoliyatPage />} />
+          <Route path="/manaviy-marifiy-faoliyat" element={<ManaviyMarifiyFaoliyatPage />} />
+          <Route path="/tashkiliy-faoliyat" element={<TashkiliyFaoliyatPage />} />
+          <Route path="/verification" element={<VerificationPage />} />
+          <Route path="*" element={<PlaceholderPage title="Page Not Found" />} />
+        </Routes>
       </AppLayout>
       <Chatbot />
-    </div>
+    </Router>
   );
 };
 
