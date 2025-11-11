@@ -1,0 +1,5 @@
+{
+  "name": "NIU Faculty Monitoring Dashboard",
+  "description": "A corporate platform for monitoring the activities of the faculty at Navoiy Innovatsiyalar Universiteti. It includes dashboards for scientific, educational, and organizational activities, along with an integrated AI assistant.",
+  "requestFramePermissions": []
+}
