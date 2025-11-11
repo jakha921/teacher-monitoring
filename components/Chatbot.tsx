@@ -1,19 +1,19 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage, GroundingSource } from '../types';
-import { sendMessageToGemini } from '../services/geminiService';
+import { sendMessageToGemini, sendComplexQueryToGemini } from '../services/geminiService';
 
 const Chatbot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeepAnalysis, setIsDeepAnalysis] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
         setMessages([
-            { sender: 'bot', text: 'Hello! How can I help you today? I can answer questions about recent academic news and trends.' }
+            { sender: 'bot', text: "Hello! I'm your AI Assistant. I can answer quick questions using Google Search. For complex tasks like content analysis or report generation, enable 'Deep Analysis' mode." }
         ]);
     }
   }, [isOpen]);
@@ -28,40 +28,69 @@ const Chatbot: React.FC = () => {
     if (input.trim() === '' || isLoading) return;
     const userInput: ChatMessage = { sender: 'user', text: input };
     setMessages((prev) => [...prev, userInput]);
+    const currentInput = input;
     setInput('');
     setIsLoading(true);
 
-    let fullBotResponse = '';
-    let sources: GroundingSource[] = [];
-    const botMessage: ChatMessage = { sender: 'bot', text: '' };
-    setMessages((prev) => [...prev, botMessage]);
-
-    try {
-        const stream = await sendMessageToGemini(input, messages.slice(0, -1)); // Pass previous history
-        for await (const chunk of stream) {
-            fullBotResponse += chunk.text;
-            if (chunk.sources) {
-                sources = [...sources, ...chunk.sources];
-            }
+    if (isDeepAnalysis) {
+        const thinkingMessage: ChatMessage = { sender: 'bot', text: '🤔 Thinking...' };
+        setMessages((prev) => [...prev, thinkingMessage]);
+        
+        try {
+            const responseText = await sendComplexQueryToGemini(currentInput);
             setMessages((prev) =>
               prev.map((msg, index) =>
                 index === prev.length - 1
-                  ? { ...msg, text: fullBotResponse, sources: sources.length > 0 ? sources : undefined }
+                  ? { ...msg, text: responseText }
                   : msg
               )
             );
+        } catch (error) {
+            console.error('Gemini Pro API error:', error);
+            setMessages((prev) =>
+                prev.map((msg, index) =>
+                    index === prev.length - 1
+                        ? { ...msg, text: 'Sorry, I encountered an error during deep analysis. Please try again.' }
+                        : msg
+                )
+            );
+        } finally {
+            setIsLoading(false);
         }
-    } catch (error) {
-        console.error('Gemini API error:', error);
-        setMessages((prev) =>
-            prev.map((msg, index) =>
-                index === prev.length - 1
-                    ? { ...msg, text: 'Sorry, I encountered an error. Please try again.' }
-                    : msg
-            )
-        );
-    } finally {
-        setIsLoading(false);
+    } else {
+        let fullBotResponse = '';
+        let sources: GroundingSource[] = [];
+        const botMessage: ChatMessage = { sender: 'bot', text: '' };
+        setMessages((prev) => [...prev, botMessage]);
+
+        try {
+            const stream = await sendMessageToGemini(currentInput);
+            for await (const chunk of stream) {
+                fullBotResponse += chunk.text;
+                if (chunk.sources) {
+                    sources = [...sources, ...chunk.sources];
+                }
+                const uniqueSources = [...new Map(sources.map(item => [item.uri, item])).values()];
+                setMessages((prev) =>
+                  prev.map((msg, index) =>
+                    index === prev.length - 1
+                      ? { ...msg, text: fullBotResponse, sources: uniqueSources.length > 0 ? uniqueSources : undefined }
+                      : msg
+                  )
+                );
+            }
+        } catch (error) {
+            console.error('Gemini API error:', error);
+            setMessages((prev) =>
+                prev.map((msg, index) =>
+                    index === prev.length - 1
+                        ? { ...msg, text: 'Sorry, I encountered an error. Please try again.' }
+                        : msg
+                )
+            );
+        } finally {
+            setIsLoading(false);
+        }
     }
   };
   
@@ -110,13 +139,13 @@ const Chatbot: React.FC = () => {
                 </div>
               </div>
             ))}
-             {isLoading && (
+             {isLoading && !isDeepAnalysis && (
                 <div className="flex justify-start mb-4">
                   <div className="bg-gray-200 text-gray-800 rounded-2xl px-4 py-2">
                     <div className="flex items-center space-x-2">
                         <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse"></div>
-                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse delay-75"></div>
-                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse delay-150"></div>
+                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse [animation-delay:0.1s]"></div>
+                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse [animation-delay:0.2s]"></div>
                     </div>
                   </div>
                 </div>
@@ -124,24 +153,40 @@ const Chatbot: React.FC = () => {
             <div ref={messagesEndRef} />
           </div>
           <div className="p-4 border-t bg-white rounded-b-lg">
+             <div className="flex items-center justify-end mb-2 px-1">
+                <label htmlFor="deep-analysis-toggle" className="flex items-center cursor-pointer select-none">
+                    <span className="mr-3 text-sm text-gray-700 font-medium">Deep Analysis</span>
+                    <div className="relative">
+                        <input 
+                            type="checkbox" 
+                            id="deep-analysis-toggle" 
+                            className="sr-only peer" 
+                            checked={isDeepAnalysis} 
+                            onChange={() => setIsDeepAnalysis(!isDeepAnalysis)}
+                            disabled={isLoading}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 rounded-full peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-800 peer-disabled:opacity-50"></div>
+                    </div>
+                </label>
+            </div>
             <div className="flex items-center">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask me anything..."
+                placeholder={isDeepAnalysis ? "Enter a complex query for analysis..." : "Ask a quick question..."}
                 className="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={isLoading}
               />
               <button
                 onClick={handleSend}
-                disabled={isLoading}
-                className="ml-3 bg-blue-500 text-white rounded-full p-2 hover:bg-blue-600 disabled:bg-blue-300 transition-colors"
+                disabled={isLoading || input.trim() === ''}
+                className="ml-3 bg-blue-500 text-white rounded-full p-2 hover:bg-blue-600 disabled:bg-blue-300 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 aria-label="Send message"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
               </button>
             </div>
